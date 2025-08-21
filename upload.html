@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการทรัพย์สินคอมพิวเตอร์ - นำเข้าข้อมูล</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .card {
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+        .tab-active {
+            border-bottom: 2px solid #4F46E5;
+            color: #4F46E5;
+        }
+        .tab {
+            cursor: pointer;
+        }
+        .dropzone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .dropzone.active {
+            border-color: #4F46E5;
+            background-color: #EEF2FF;
+        }
+        .progress-bar {
+            height: 6px;
+            background-color: #e2e8f0;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #4F46E5;
+            transition: width 0.3s ease;
+        }
+        .file-item {
+            transition: all 0.3s ease;
+        }
+        .file-item:hover {
+            background-color: #f8fafc;
+        }
+        .preview-table {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .preview-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .preview-table th {
+            position: sticky;
+            top: 0;
+            background-color: #f1f5f9;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <div class="ml-4 text-xl font-bold text-gray-800">ระบบจัดการทรัพย์สินคอมพิวเตอร์</div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a  href="dashboard.html" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-300 ease-in-out">แดชบอร์ด</a>
+                    <a  href="mangement.html" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-300 ease-in-out">จัดการอุปกรณ์</a>
+                    <a  href="upload.html" class="px-4 py-2 text-sm font-semibold text-blue-800 bg-blue-100 rounded-lg shadow-sm transition-all duration-300 ease-in-out">นำเข้าข้อมูล</a>
+                    <a  href="setting.html" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-300 ease-in-out">ตั้งค่า</a>
+                    <div class="ml-4 flex items-center">
+                        <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-medium">
+                            A
+                        </div>
+                        <span class="ml-2 text-sm font-medium text-gray-700">แอดมิน</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-indigo-800">นำเข้าข้อมูล</h1>
+                <p class="text-gray-600">นำเข้าข้อมูลคอมพิวเตอร์และอุปกรณ์จากไฟล์ Excel</p>
+            </div>
+        </div>
+
+        <!-- Import Steps -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">
+                            1
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-medium text-gray-900">เลือกไฟล์</h3>
+                            <p class="text-sm text-gray-500">อัพโหลดไฟล์ Excel ที่ต้องการนำเข้า</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-16 border-t-2 border-gray-300"></div>
+                <div class="flex-1">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-white font-bold step-number" id="step2Number">
+                            2
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-medium text-gray-500" id="step2Title">ตรวจสอบข้อมูล</h3>
+                            <p class="text-sm text-gray-500">ตรวจสอบและแก้ไขข้อมูลก่อนนำเข้า</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-16 border-t-2 border-gray-300"></div>
+                <div class="flex-1">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-white font-bold step-number" id="step3Number">
+                            3
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-medium text-gray-500" id="step3Title">นำเข้าข้อมูล</h3>
+                            <p class="text-sm text-gray-500">ยืนยันและนำเข้าข้อมูลเข้าระบบ</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: File Upload -->
+        <div id="step1" class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">อัพโหลดไฟล์</h3>
+            
+            <div class="mb-6">
+                <div class="flex flex-wrap gap-4 mb-4">
+                    <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center import-type-btn active" data-type="computers">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        คอมพิวเตอร์
+                    </button>
+                    <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition flex items-center import-type-btn" data-type="models">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                        </svg>
+                        รุ่นอุปกรณ์
+                    </button>
+                    <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition flex items-center import-type-btn" data-type="transfers">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                        การโอนย้าย
+                    </button>
+                </div>
+                
+                <div class="dropzone" id="dropzone">
+                    <input type="file" id="fileInput" class="hidden" accept=".xlsx, .xls">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p class="mt-2 text-sm text-gray-600">ลากไฟล์มาวางที่นี่ หรือ</p>
+                    <button id="browseBtn" class="mt-2 px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition">เลือกไฟล์</button>
+                    <p class="mt-2 text-xs text-gray-500">รองรับไฟล์ .xlsx, .xls (ขนาดไม่เกิน 10MB)</p>
+                </div>
+                
+                <div id="fileDetails" class="mt-6 hidden">
+                    <h4 class="text-md font-medium text-gray-800 mb-2">ไฟล์ที่เลือก</h4>
+                    <div class="border rounded-lg overflow-hidden">
+                        <div class="file-item p-4 flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="bg-green-100 p-2 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <h4 class="text-sm font-medium text-gray-900" id="fileName">computer_data.xlsx</h4>
+                                    <p class="text-xs text-gray-500" id="fileSize">2.5 MB</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <button id="removeFileBtn" class="text-red-600 hover:text-red-800 mr-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                                <button id="continueBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                                    ดำเนินการต่อ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <h4 class="text-md font-medium text-gray-800 mb-2">ตัวเลือกการนำเข้า</h4>
+                <div class="flex flex-wrap gap-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" class="form-checkbox h-5 w-5 text-indigo-600" id="updateExisting" checked>
+                        <span class="ml-2 text-sm text-gray-700">อัพเดทข้อมูลที่มีอยู่แล้ว</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" class="form-checkbox h-5 w-5 text-indigo-600" id="addNew" checked>
+                        <span class="ml-2 text-sm text-gray-700">เพิ่มข้อมูลใหม่</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" class="form-checkbox h-5 w-5 text-indigo-600" id="deleteNotInFile">
+                        <span class="ml-2 text-sm text-gray-700">ลบข้อมูลที่ไม่มีในไฟล์</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <h4 class="text-md font-medium text-gray-800 mb-2">ดาวน์โหลดเทมเพลต</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition cursor-pointer">
+                        <div class="flex items-center">
+                            <div class="bg-green-100 p-2 rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="text-sm font-medium text-gray-900">เทมเพลตคอมพิวเตอร์</h4>
+                                <p class="text-xs text-gray-500">สำหรับนำเข้าข้อมูลคอมพิวเตอร์</p>
+                            </div>
+                            <button id="downloadComputerTemplate" class="ml-auto bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition cursor-pointer">
+                        <div class="flex items-center">
+                            <div class="bg-blue-100 p-2 rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="text-sm font-medium text-gray-900">เทมเพลตรุ่นอุปกรณ์</h4>
+                                <p class="text-xs text-gray-500">สำหรับนำเข้าข้อมูลรุ่นอุปกรณ์</p>
+                            </div>
+                            <button id="downloadModelTemplate" class="ml-auto bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition cursor-pointer">
+                        <div class="flex items-center">
+                            <div class="bg-purple-100 p-2 rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="text-sm font-medium text-gray-900">เทมเพลตการโอนย้าย</h4>
+                                <p class="text-xs text-gray-500">สำหรับนำเข้าข้อมูลการโอนย้าย</p>
+                            </div>
+                            <button id="downloadTransferTemplate" class="ml-auto bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Data Preview and Validation -->
+        <div id="step2" class="bg-white rounded-xl shadow-md p-6 mb-8 hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold text-gray-800">ตรวจสอบข้อมูล</h3>
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-500 mr-2">แถวทั้งหมด: <span id="totalRows" class="font-medium">0</span></span>
+                    <span class="text-sm text-green-600 mr-2">ถูกต้อง: <span id="validRows" class="font-medium">0</span></span>
+                    <span class="text-sm text-red-600">ข้อผิดพลาด: <span id="errorRows" class="font-medium">0</span></span>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <div class="flex items-center mb-2">
+                    <div class="w-full">
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm font-medium text-gray-700">การตรวจสอบข้อมูล</span>
+                            <span class="text-sm text-gray-500" id="validationStatus">กำลังตรวจสอบ...</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" id="validationProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4 flex items-center">
+                <div class="relative flex-grow mr-2">
+                    <input type="text" id="searchData" placeholder="ค้นหาข้อมูล..." class="pl-10 pr-4 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <select id="errorFilter" class="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="all">ทั้งหมด</option>
+                    <option value="valid">ข้อมูลถูกต้อง</option>
+                    <option value="error">ข้อมูลผิดพลาด</option>
+                </select>
+            </div>
+
+            <div class="preview-table border rounded-lg overflow-hidden mb-4">
+                <table class="min-w-full divide-y divide-gray-200" id="previewTable">
+                    <thead class="bg-gray-50">
+                        <tr id="headerRow">
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
+                            <!-- Headers will be dynamically added here -->
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="previewBody">
+                        <!-- Data rows will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-700">
+                            กรุณาตรวจสอบข้อมูลให้ถูกต้องก่อนนำเข้า แถวที่มีข้อผิดพลาดจะถูกไฮไลท์ด้วยสีแดง
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between">
+                <button id="backToStep1" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    ย้อนกลับ
+                </button>
+                <div>
+                    <button id="downloadErrorsBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition mr-2 hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        ดาวน์โหลดรายการข้อผิดพลาด
+                    </button>
+                    <button id="continueToStep3" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                        ดำเนินการต่อ
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Import Confirmation and Process -->
+        <div id="step3" class="bg-white rounded-xl shadow-md p-6 mb-8 hidden">
+            <h3 class="text-lg font-semibold text-gray-800 mb-6">นำเข้าข้อมูล</h3>
+            
+            <div class="mb-6">
+                <div class="bg-indigo-50 border-l-4 border-indigo-400 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-indigo-700">
+                                คุณกำลังจะนำเข้าข้อมูลจากไฟล์ <span id="confirmFileName" class="font-medium">computer_data.xlsx</span> จำนวน <span id="confirmRowCount" class="font-medium">0</span> รายการ
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="bg-green-100 p-2 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-gray-500">เพิ่มใหม่</p>
+                                <p class="text-xl font-bold text-green-700" id="newRecords">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="bg-blue-100 p-2 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-gray-500">อัพเดท</p>
+                                <p class="text-xl font-bold text-blue-700" id="updateRecords">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-red-50 p-4 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="bg-red-100 p-2 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-gray-500">ลบ</p>
+                                <p class="text-xl font-bold text-red-700" id="deleteRecords">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <h4 class="text-md font-medium text-gray-800 mb-2">ยืนยันการนำเข้า</h4>
+                    <div class="flex flex-wrap gap-4">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="form-checkbox h-5 w-5 text-indigo-600" id="confirmImport">
+                            <span class="ml-2 text-sm text-gray-700">ฉันได้ตรวจสอบข้อมูลและยืนยันการนำเข้าข้อมูล</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div id="importProgress" class="mb-6 hidden">
+                    <div class="flex items-center mb-2">
+                        <div class="w-full">
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">กำลังนำเข้าข้อมูล</span>
+                                <span class="text-sm text-gray-500" id="importStatus">0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-bar-fill" id="importProgressBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="importSuccess" class="bg-green-50 border-l-4 border-green-400 p-4 mb-6 hidden">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-green-700">
+                                นำเข้าข้อมูลสำเร็จ! นำเข้าข้อมูลทั้งหมด <span id="successCount" class="font-medium">0</span> รายการ
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="importError" class="bg-red-50 border-l-4 border-red-400 p-4 mb-6 hidden">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">
+                                เกิดข้อผิดพลาดในการนำเข้าข้อมูล กรุณาลองใหม่อีกครั้ง
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-between">
+                <button id="backToStep2" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    ย้อนกลับ
+                </button>
+                <div>
+                    <button id="startImportBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:bg-indigo-300 disabled:cursor-not-allowed" disabled>
+                        เริ่มนำเข้าข้อมูล
+                    </button>
+                    <button id="viewDashboardBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition hidden">
+                        ไปที่แดชบอร์ด
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import History -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">ประวัติการนำเข้า</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อไฟล์</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภท</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนรายการ</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ผู้นำเข้า</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">การดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">15/05/2023 14:30</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">computer_data_may2023.xlsx</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">คอมพิวเตอร์</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">142</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    สำเร็จ
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">admin</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <button class="text-indigo-600 hover:text-indigo-900 view-import-details" data-id="1">ดูรายละเอียด</button>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">10/04/2023 09:15</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">new_devices_apr2023.xlsx</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">รุ่นอุปกรณ์</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">28</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    สำเร็จ
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">admin</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <button class="text-indigo-600 hover:text-indigo-900 view-import-details" data-id="2">ดูรายละเอียด</button>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">05/03/2023 11:45</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">inventory_mar2023.xlsx</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">คอมพิวเตอร์</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">115</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    บางส่วน
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">manager</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <button class="text-indigo-600 hover:text-indigo-900 view-import-details" data-id="3">ดูรายละเอียด</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Details Modal -->
+    <div id="importDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800" id="importDetailsTitle">รายละเอียดการนำเข้าข้อมูล</h3>
+                    <button id="closeImportDetailsModal" class="text-gray-500 hover:text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">ข้อมูลทั่วไป</h4>
+                        <div class="space-y-3">
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">วันที่นำเข้า:</span>
+                                <span class="text-gray-900 font-medium" id="importDate">15/05/2023 14:30</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">ชื่อไฟล์:</span>
+                                <span class="text-gray-900 font-medium" id="importFileName">computer_data_may2023.xlsx</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">ประเภท:</span>
+                                <span class="text-gray-900 font-medium" id="importType">คอมพิวเตอร์</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">จำนวนรายการ:</span>
+                                <span class="text-gray-900 font-medium" id="importCount">142</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">สถานะ:</span>
+                                <span class="text-green-600 font-medium" id="importDetailStatus">สำเร็จ</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">ผู้นำเข้า:</span>
+                                <span class="text-gray-900 font-medium" id="importUser">admin</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">สรุปผลการนำเข้า</h4>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500">เพิ่มใหม่</p>
+                                <p class="text-xl font-bold text-green-700" id="importDetailNew">75</p>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500">อัพเดท</p>
+                                <p class="text-xl font-bold text-blue-700" id="importDetailUpdate">67</p>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500">ข้อผิดพลาด</p>
+                                <p class="text-xl font-bold text-red-700" id="importDetailError">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4">รายการที่นำเข้า</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รหัสทรัพย์สิน</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภท</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รุ่น</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">แผนก</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="importDetailTable">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">1</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">IT-PC-001</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Desktop</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Dell OptiPlex 7080</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">ไอที</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            เพิ่มใหม่
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">IT-PC-002</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Desktop</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">HP EliteDesk 800 G6</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">ไอที</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            อัพเดท
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">3</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">IT-LT-001</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Laptop</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Lenovo ThinkPad X1</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">ไอที</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            เพิ่มใหม่
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button id="downloadImportReport" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        ดาวน์โหลดรายงาน
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Details Modal -->
+    <div id="importDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800" id="importDetailsTitle">รายละเอียดการนำเข้าข้อมูล</h3>
+                    <button id="closeImportDetailsModal" class="text-gray-500 hover:text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">ข้อมูลทั่วไป</h4>
+                        <div class="space-y-3">
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">วันที่นำเข้า:</span>
+                                <span class="text-gray-900 font-medium" id="importDate">15/05/2023 14:30</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">ชื่อไฟล์:</span>
+                                <span class="text-gray-900 font-medium" id="importFileName">computer_data_may2023.xlsx</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">ประเภท:</span>
+                                <span class="text-gray-900 font-medium" id="importType">คอมพิวเตอร์</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">จำนวนรายการ:</span>
+                                <span class="text-gray-900 font-medium" id="importCount">142</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">สถานะ:</span>
+                                <span class="text-green-600 font-medium" id="importDetailStatus">สำเร็จ</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">ผู้นำเข้า:</span>
+                                <span class="text-gray-900 font-medium" id="importUser">admin</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">สรุปผลการนำเข้า</h4>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500">เพิ่มใหม่</p>
+                                <p class="text-xl font-bold text-green-700" id="importDetailNew">75</p>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500">อัพเดท</p>
+                                <p class="text-xl font-bold text-blue-700" id="importDetailUpdate">67</p>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500">ข้อผิดพลาด</p>
+                                <p class="text-xl font-bold text-red-700" id="importDetailError">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4">รายการที่นำเข้า</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รหัสทรัพย์สิน</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภท</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รุ่น</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">แผนก</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="importDetailTable">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">1</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">IT-PC-001</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Desktop</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Dell OptiPlex 7080</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">ไอที</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            เพิ่มใหม่
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">IT-PC-002</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Desktop</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">HP EliteDesk 800 G6</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">ไอที</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            อัพเดท
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">3</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">IT-LT-001</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Laptop</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Lenovo ThinkPad X1</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">ไอที</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            เพิ่มใหม่
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button id="downloadImportReport" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        ดาวน์โหลดรายงาน
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Details Modal -->
+    <div id="importDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800" id="importDetailsTitle">รายละเอียดการนำเข้าข้อมูล</h3>
+                    <button id="closeImportDetailsModal" class="text-gray-500 hover:text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">ข้อมูลทั่วไป</h4>
+                        <div class="space-y-3">
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">วันที่นำเข้า:</span>
+                                <span class="text-gray-900 font-medium" id="importDate">15/05/2023 14:30</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">ชื่อไฟล์:</span>
+                                <span class="text-gray-900 font-medium" id="importFileName">computer_data_may2023.xlsx</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">ประเภท:</span>
+                                <span class="text-gray-900 font-medium" id="importType">คอมพิวเตอร์</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">จำนวนรายการ:</span>
+                                <span class="text-gray-900 font-medium" id="importCount">142</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">สถานะ:</span>
+                                <span class="text-green-600 font-medium" id="importDetailStatus">สำเร็จ</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-gray-500 w-32">ผู้นำเข้า:</span>
+                                <span class="text-gray-900 font-medium" id="importUser">admin</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">สรุปผลการนำเข้า</h4>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500">เพิ่มใหม่</p>
+                                <p class="text-xl font-bold text-green-700" id="importDetailNew">75</p>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500">อัพเดท</p>
+                                <p class="text-xl font-bold text-blue-700" id="importDetailUpdate">67</p>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-500">ข้อผิดพลาด</p>
+                                <p class="text-xl font-bold text-red-700" id="importDetailError">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4">รายการที่นำเข้า</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รหัสทรัพย์สิน</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภท</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รุ่น</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">แผนก</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="importDetailTable">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">1</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">IT-PC-001</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Desktop</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Dell OptiPlex 7080</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">ไอที</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            เพิ่มใหม่
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">IT-PC-002</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Desktop</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">HP EliteDesk 800 G6</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">ไอที</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            อัพเดท
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">3</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">IT-LT-001</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Laptop</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Lenovo ThinkPad X1</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">ไอที</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            เพิ่มใหม่
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button id="downloadImportReport" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        ดาวน์โหลดรายงาน
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Variables
+            let currentStep = 1;
+            let importType = 'computers';
+            let excelData = null;
+            let headers = [];
+            let validationErrors = [];
+            
+            // DOM Elements
+            const fileInput = document.getElementById('fileInput');
+            const browseBtn = document.getElementById('browseBtn');
+            const dropzone = document.getElementById('dropzone');
+            const fileDetails = document.getElementById('fileDetails');
+            const fileName = document.getElementById('fileName');
+            const fileSize = document.getElementById('fileSize');
+            const removeFileBtn = document.getElementById('removeFileBtn');
+            const continueBtn = document.getElementById('continueBtn');
+            const step1 = document.getElementById('step1');
+            const step2 = document.getElementById('step2');
+            const step3 = document.getElementById('step3');
+            const backToStep1 = document.getElementById('backToStep1');
+            const backToStep2 = document.getElementById('backToStep2');
+            const continueToStep3 = document.getElementById('continueToStep3');
+            const importTypeBtns = document.querySelectorAll('.import-type-btn');
+            const previewTable = document.getElementById('previewTable');
+            const headerRow = document.getElementById('headerRow');
+            const previewBody = document.getElementById('previewBody');
+            const totalRows = document.getElementById('totalRows');
+            const validRows = document.getElementById('validRows');
+            const errorRows = document.getElementById('errorRows');
+            const validationProgress = document.getElementById('validationProgress');
+            const validationStatus = document.getElementById('validationStatus');
+            const downloadErrorsBtn = document.getElementById('downloadErrorsBtn');
+            const confirmFileName = document.getElementById('confirmFileName');
+            const confirmRowCount = document.getElementById('confirmRowCount');
+            const newRecords = document.getElementById('newRecords');
+            const updateRecords = document.getElementById('updateRecords');
+            const deleteRecords = document.getElementById('deleteRecords');
+            const confirmImport = document.getElementById('confirmImport');
+            const startImportBtn = document.getElementById('startImportBtn');
+            const importProgress = document.getElementById('importProgress');
+            const importProgressBar = document.getElementById('importProgressBar');
+            const importStatus = document.getElementById('importStatus');
+            const importSuccess = document.getElementById('importSuccess');
+            const importError = document.getElementById('importError');
+            const successCount = document.getElementById('successCount');
+            const viewDashboardBtn = document.getElementById('viewDashboardBtn');
+            const closeImportDetailsModal = document.getElementById('closeImportDetailsModal');
+            const importDetailsModal = document.getElementById('importDetailsModal');
+            const viewImportDetailsBtns = document.querySelectorAll('.view-import-details');
+            
+            // Step navigation
+            function showStep(step) {
+                currentStep = step;
+                
+                // Hide all steps
+                step1.classList.add('hidden');
+                step2.classList.add('hidden');
+                step3.classList.add('hidden');
+                
+                // Show current step
+                if (step === 1) {
+                    step1.classList.remove('hidden');
+                    document.getElementById('step2Number').classList.add('bg-gray-300');
+                    document.getElementById('step2Number').classList.remove('bg-indigo-600');
+                    document.getElementById('step2Title').classList.add('text-gray-500');
+                    document.getElementById('step2Title').classList.remove('text-gray-900');
+                    document.getElementById('step3Number').classList.add('bg-gray-300');
+                    document.getElementById('step3Number').classList.remove('bg-indigo-600');
+                    document.getElementById('step3Title').classList.add('text-gray-500');
+                    document.getElementById('step3Title').classList.remove('text-gray-900');
+                } else if (step === 2) {
+                    step2.classList.remove('hidden');
+                    document.getElementById('step2Number').classList.remove('bg-gray-300');
+                    document.getElementById('step2Number').classList.add('bg-indigo-600');
+                    document.getElementById('step2Title').classList.remove('text-gray-500');
+                    document.getElementById('step2Title').classList.add('text-gray-900');
+                    document.getElementById('step3Number').classList.add('bg-gray-300');
+                    document.getElementById('step3Number').classList.remove('bg-indigo-600');
+                    document.getElementById('step3Title').classList.add('text-gray-500');
+                    document.getElementById('step3Title').classList.remove('text-gray-900');
+                } else if (step === 3) {
+                    step3.classList.remove('hidden');
+                    document.getElementById('step2Number').classList.remove('bg-gray-300');
+                    document.getElementById('step2Number').classList.add('bg-indigo-600');
+                    document.getElementById('step2Title').classList.remove('text-gray-500');
+                    document.getElementById('step2Title').classList.add('text-gray-900');
+                    document.getElementById('step3Number').classList.remove('bg-gray-300');
+                    document.getElementById('step3Number').classList.add('bg-indigo-600');
+                    document.getElementById('step3Title').classList.remove('text-gray-500');
+                    document.getElementById('step3Title').classList.add('text-gray-900');
+                }
+            }
+            
+            // File input handling
+            browseBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', function(e) {
+                handleFiles(e.target.files);
+            });
+            
+            // Drag and drop handling
+            dropzone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                dropzone.classList.add('active');
+            });
+            
+            dropzone.addEventListener('dragleave', function() {
+                dropzone.classList.remove('active');
+            });
+            
+            dropzone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                dropzone.classList.remove('active');
+                handleFiles(e.dataTransfer.files);
+            });
+            
+            function handleFiles(files) {
+                if (files.length === 0) return;
+                
+                const file = files[0];
+                
+                // Check file type
+                if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+                    alert('กรุณาเลือกไฟล์ Excel (.xlsx, .xls) เท่านั้น');
+                    return;
+                }
+                
+                // Check file size (max 10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('ขนาดไฟล์ต้องไม่เกิน 10MB');
+                    return;
+                }
+                
+                // Display file details
+                fileName.textContent = file.name;
+                fileSize.textContent = formatFileSize(file.size);
+                fileDetails.classList.remove('hidden');
+                
+                // Read Excel file
+                readExcelFile(file);
+            }
+            
+            function formatFileSize(bytes) {
+                if (bytes < 1024) return bytes + ' bytes';
+                else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+                else return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+            }
+            
+            function readExcelFile(file) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        
+                        // Get first sheet
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        // Convert to JSON
+                        excelData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        // Extract headers
+                        headers = excelData[0];
+                        
+                        console.log('Excel data loaded:', excelData);
+                    } catch (error) {
+                        console.error('Error reading Excel file:', error);
+                        alert('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel');
+                    }
+                };
+                
+                reader.readAsArrayBuffer(file);
+            }
+            
+            // Remove file
+            removeFileBtn.addEventListener('click', function() {
+                fileInput.value = '';
+                fileDetails.classList.add('hidden');
+                excelData = null;
+                headers = [];
+            });
+            
+            // Import type selection
+            importTypeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    importTypeBtns.forEach(b => {
+                        b.classList.remove('bg-indigo-600', 'text-white');
+                        b.classList.add('bg-gray-200', 'text-gray-700');
+                    });
+                    
+                    this.classList.remove('bg-gray-200', 'text-gray-700');
+                    this.classList.add('bg-indigo-600', 'text-white');
+                    
+                    importType = this.dataset.type;
+                });
+            });
+            
+            // Continue to step 2
+            continueBtn.addEventListener('click', function() {
+                if (!excelData || excelData.length <= 1) {
+                    alert('กรุณาเลือกไฟล์ Excel ที่มีข้อมูล');
+                    return;
+                }
+                
+                showStep(2);
+                validateAndPreviewData();
+            });
+            
+            // Back to step 1
+            backToStep1.addEventListener('click', function() {
+                showStep(1);
+            });
+            
+            // Continue to step 3
+            continueToStep3.addEventListener('click', function() {
+                if (validationErrors.length > 0) {
+                    if (!confirm('มีข้อมูลที่ไม่ถูกต้อง คุณต้องการดำเนินการต่อหรือไม่?')) {
+                        return;
+                    }
+                }
+                
+                showStep(3);
+                prepareImportSummary();
+            });
+            
+            // Back to step 2
+            backToStep2.addEventListener('click', function() {
+                showStep(2);
+            });
+            
+            // Validate and preview data
+            function validateAndPreviewData() {
+                if (!excelData || excelData.length <= 1) return;
+                
+                // Clear previous data
+                while (headerRow.children.length > 1) {
+                    headerRow.removeChild(headerRow.lastChild);
+                }
+                
+                previewBody.innerHTML = '';
+                validationErrors = [];
+                
+                // Add headers
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                });
+                
+                // Set total rows
+                const dataRows = excelData.length - 1; // Exclude header row
+                totalRows.textContent = dataRows;
+                
+                // Simulate validation progress
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 5;
+                    validationProgress.style.width = `${progress}%`;
+                    validationStatus.textContent = `${progress}%`;
+                    
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        validationStatus.textContent = 'เสร็จสิ้น';
+                        
+                        // Add data rows
+                        for (let i = 1; i < excelData.length; i++) {
+                            const rowData = excelData[i];
+                            const tr = document.createElement('tr');
+                            
+                            // Validate row
+                            const isValid = validateRow(rowData, i);
+                            
+                            if (!isValid) {
+                                tr.classList.add('bg-red-50');
+                            } else {
+                                tr.classList.add('hover:bg-gray-50');
+                            }
+                            
+                            // Add row number
+                            const tdRowNum = document.createElement('td');
+                            tdRowNum.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-900';
+                            tdRowNum.textContent = i;
+                            tr.appendChild(tdRowNum);
+                            
+                            // Add data cells
+                            rowData.forEach(cell => {
+                                const td = document.createElement('td');
+                                td.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-900';
+                                td.textContent = cell || '';
+                                tr.appendChild(td);
+                            });
+                            
+                            previewBody.appendChild(tr);
+                        }
+                        
+                        // Update validation counts
+                        const validCount = dataRows - validationErrors.length;
+                        validRows.textContent = validCount;
+                        errorRows.textContent = validationErrors.length;
+                        
+                        // Show download errors button if there are errors
+                        if (validationErrors.length > 0) {
+                            downloadErrorsBtn.classList.remove('hidden');
+                        } else {
+                            downloadErrorsBtn.classList.add('hidden');
+                        }
+                    }
+                }, 100);
+            }
+            
+            // Validate row based on import type
+            function validateRow(rowData, rowIndex) {
+                // Simple validation example - check for required fields
+                let isValid = true;
+                
+                if (importType === 'computers') {
+                    // Check required fields for computers
+                    if (!rowData[0] || !rowData[1] || !rowData[2] || !rowData[3]) {
+                        validationErrors.push({
+                            row: rowIndex,
+                            error: 'ข้อมูลที่จำเป็นไม่ครบถ้วน (รหัสทรัพย์สิน, ประเภท, รุ่น, แผนก)'
+                        });
+                        isValid = false;
+                    }
+                } else if (importType === 'models') {
+                    // Check required fields for models
+                    if (!rowData[0] || !rowData[1] || !rowData[2]) {
+                        validationErrors.push({
+                            row: rowIndex,
+                            error: 'ข้อมูลที่จำเป็นไม่ครบถ้วน (รหัสรุ่น, ประเภท, ชื่อรุ่น)'
+                        });
+                        isValid = false;
+                    }
+                } else if (importType === 'transfers') {
+                    // Check required fields for transfers
+                    if (!rowData[0] || !rowData[1] || !rowData[2]) {
+                        validationErrors.push({
+                            row: rowIndex,
+                            error: 'ข้อมูลที่จำเป็นไม่ครบถ้วน (รหัสทรัพย์สิน, แผนกปลายทาง, วันที่โอนย้าย)'
+                        });
+                        isValid = false;
+                    }
+                }
+                
+                return isValid;
+            }
+            
+            // Prepare import summary
+            function prepareImportSummary() {
+                if (!excelData) return;
+                
+                const dataRows = excelData.length - 1; // Exclude header row
+                const validCount = dataRows - validationErrors.length;
+                
+                confirmFileName.textContent = fileName.textContent;
+                confirmRowCount.textContent = validCount;
+                
+                // Simulate analysis of new/update/delete records
+                const newCount = Math.floor(validCount * 0.6);
+                const updateCount = validCount - newCount;
+                const deleteCount = document.getElementById('deleteNotInFile').checked ? Math.floor(validCount * 0.1) : 0;
+                
+                newRecords.textContent = newCount;
+                updateRecords.textContent = updateCount;
+                deleteRecords.textContent = deleteCount;
+            }
+            
+            // Confirm import checkbox
+            confirmImport.addEventListener('change', function() {
+                startImportBtn.disabled = !this.checked;
+            });
+            
+            // Start import
+            startImportBtn.addEventListener('click', function() {
+                this.disabled = true;
+                importProgress.classList.remove('hidden');
+                
+                // Simulate import progress
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 5;
+                    importProgressBar.style.width = `${progress}%`;
+                    importStatus.textContent = `${progress}%`;
+                    
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        importStatus.textContent = 'เสร็จสิ้น';
+                        
+                        // Show success message
+                        importSuccess.classList.remove('hidden');
+                        viewDashboardBtn.classList.remove('hidden');
+                        startImportBtn.classList.add('hidden');
+                        
+                        // Update success count
+                        const dataRows = excelData.length - 1;
+                        const validCount = dataRows - validationErrors.length;
+                        successCount.textContent = validCount;
+                    }
+                }, 200);
+            });
+            
+            // View dashboard button
+            viewDashboardBtn.addEventListener('click', function() {
+                window.location.href = 'dashboard.html';
+            });
+            
+            // Import details modal
+            viewImportDetailsBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    importDetailsModal.classList.remove('hidden');
+                });
+            });
+            
+            closeImportDetailsModal.addEventListener('click', function() {
+                importDetailsModal.classList.add('hidden');
+            });
+            
+            // Template download buttons
+            document.getElementById('downloadComputerTemplate').addEventListener('click', function() {
+                downloadTemplate('computers');
+            });
+            
+            document.getElementById('downloadModelTemplate').addEventListener('click', function() {
+                downloadTemplate('models');
+            });
+            
+            document.getElementById('downloadTransferTemplate').addEventListener('click', function() {
+                downloadTemplate('transfers');
+            });
+            
+            function downloadTemplate(type) {
+                // Create workbook
+                const wb = XLSX.utils.book_new();
+                let data = [];
+                
+                if (type === 'computers') {
+                    data = [
+                        ['รหัสทรัพย์สิน*', 'ประเภท*', 'รุ่น*', 'แผนก*', 'ผู้ใช้งาน', 'วันที่ซื้อ', 'ราคา', 'สถานะ'],
+                        ['IT-PC-001', 'DT', 'DT-DELL-001', 'IT', 'สมชาย ใจดี', '15/01/2022', '35000', 'normal'],
+                        ['IT-LT-001', 'LT', 'LT-LENOVO-001', 'IT', 'สมศรี รักงาน', '10/03/2022', '45000', 'maintenance']
+                    ];
+                } else if (type === 'models') {
+                    data = [
+                        ['รหัสรุ่น*', 'ประเภท*', 'ยี่ห้อ*', 'รุ่น*', 'CPU', 'RAM', 'Storage', 'Graphics', 'OS'],
+                        ['DT-DELL-001', 'DT', 'Dell', 'OptiPlex 7080', 'Intel Core i7-10700', '16GB DDR4', '512GB SSD', 'Intel UHD Graphics 630', 'Windows 11 Pro'],
+                        ['LT-LENOVO-001', 'LT', 'Lenovo', 'ThinkPad X1', 'Intel Core i7-1165G7', '16GB DDR4', '512GB SSD', 'Intel Iris Xe Graphics', 'Windows 11 Pro']
+                    ];
+                } else if (type === 'transfers') {
+                    data = [
+                        ['รหัสทรัพย์สิน*', 'แผนกปลายทาง*', 'วันที่โอนย้าย*', 'ผู้รับ', 'หมายเหตุ'],
+                        ['IT-PC-001', 'ACCOUNTING', '15/05/2023', 'นางสาวสมหญิง รักดี', 'โอนย้ายเพื่อใช้งานชั่วคราว'],
+                        ['IT-LT-001', 'MARKETING', '20/05/2023', 'นายวิชัย มั่นคง', 'โอนย้ายถาวร']
+                    ];
+                }
+                
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+                
+                // Generate file name
+                const fileName = `template_${type}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                
+                // Download file
+                XLSX.writeFile(wb, fileName);
+            }
+            
+            // Download errors
+            downloadErrorsBtn.addEventListener('click', function() {
+                if (validationErrors.length === 0) return;
+                
+                // Create workbook
+                const wb = XLSX.utils.book_new();
+                const data = [
+                    ['แถวที่', 'ข้อผิดพลาด']
+                ];
+                
+                validationErrors.forEach(error => {
+                    data.push([error.row, error.error]);
+                });
+                
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                XLSX.utils.book_append_sheet(wb, ws, 'Errors');
+                
+                // Generate file name
+                const fileName = `import_errors_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                
+                // Download file
+                XLSX.writeFile(wb, fileName);
+            });
+            
+            // Download import report
+            document.getElementById('downloadImportReport').addEventListener('click', function() {
+                // Create workbook
+                const wb = XLSX.utils.book_new();
+                const data = [
+                    ['ลำดับ', 'รหัสทรัพย์สิน', 'ประเภท', 'รุ่น', 'แผนก', 'สถานะ'],
+                    [1, 'IT-PC-001', 'Desktop', 'Dell OptiPlex 7080', 'ไอที', 'เพิ่มใหม่'],
+                    [2, 'IT-PC-002', 'Desktop', 'HP EliteDesk 800 G6', 'ไอที', 'อัพเดท'],
+                    [3, 'IT-LT-001', 'Laptop', 'Lenovo ThinkPad X1', 'ไอที', 'เพิ่มใหม่']
+                ];
+                
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                XLSX.utils.book_append_sheet(wb, ws, 'ImportReport');
+                
+                // Generate file name
+                const fileName = `import_report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                
+                // Download file
+                XLSX.writeFile(wb, fileName);
+            });
+            
+            // Initialize
+            showStep(1);
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96287993728d4b58',t:'MTc1MzA3NzU5NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
